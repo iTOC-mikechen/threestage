@@ -1,24 +1,36 @@
-# vueprodute
+# 三阶段项目
 
-## Project setup
+## 本项目使用node.js部分模块，改动项目前，先安装依赖的模块
 ```
 npm install
 ```
 
-### Compiles and hot-reloads for development
+##运行项目
 ```
 npm run serve
 ```
 
-### Compiles and minifies for production
+##编译项目
 ```
 npm run build
 ```
 
-### Lints and fixes files
+##语法检查
 ```
 npm run lint
 ```
 
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+##目录介绍
+
+###datalibrary目录
+####存放数据库操作模块，由麦克陈负责开发改进
+
+
+###website目录
+####存放网站服务模块，由麦克陈负责开发改进
+
+###src目录
+####存放网站项目使用vue框架设计源码
+
+###public目录
+####存放项目编译之后用到的公共文件
