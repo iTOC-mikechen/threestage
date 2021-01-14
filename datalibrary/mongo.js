@@ -28,6 +28,7 @@ let finalGetQueryValue;
 
 /**模块内部部分函数**/
 
+
 function getDataLibraryURL() {
     if (Object.prototype.toString.call(mongoConnectMsgBody) === "[object Object]") {
         return "mongodb://" + mongoConnectMsgBody.hostname + ":" + mongoConnectMsgBody.port;
@@ -38,11 +39,9 @@ function getDataLibraryURL() {
 }//URL数据获取器
 
 function MessageProcess(MessageString, ProcWays) {
-    if (ProcWays !== undefined && ProcWays !== '') {
-
-    } else if (MsgDefaultDisplay !== undefined && MsgDefaultDisplay !== '') {
+    if (MsgDefaultDisplay !== undefined && MsgDefaultDisplay !== '') {
         ProcWays = MsgDefaultDisplay;
-    } else {
+    } else if (ProcWays === undefined || ProcWays === '') {
         ProcWays = "client.server";
     }
     switch (ProcWays) {
@@ -169,7 +168,21 @@ class analyze {
                                         if (Object.prototype.toString.call(arguments[InsertNum][attrName]) === '[object Object]') {
                                             finalAnalyzeValueObj.insert = arguments[InsertNum][attrName];
                                         } else if (Object.prototype.toString.call(arguments[InsertNum][attrName]) === '[object Array]') {
-                                            finalAnalyzeValueObj.insert = arguments[InsertNum][attrName];
+                                            finalAnalyzeValueObj.insert = [];
+                                            for (let cout in arguments[InsertNum][attrName]) {
+                                                let tfs = cout * 1;
+                                                if (Object.prototype.toString.call(arguments[InsertNum][attrName][tfs]) === '[object String]') {
+                                                    let excct = arguments[InsertNum][attrName][tfs];
+                                                    excct = excct.substr(1, excct.length - 2);
+                                                    excct = excct.split(':');
+                                                    finalAnalyzeValueObj.insert[tfs] = {};
+                                                    finalAnalyzeValueObj.insert[tfs][excct[0]] = excct[1];
+                                                } else if (Object.prototype.toString.call(arguments[InsertNum][attrName][tfs]) === '[object Object]') {
+                                                    finalAnalyzeValueObj.insert[tfs] = arguments[InsertNum][attrName][tfs];
+                                                } else {
+                                                    throw new Error("要插入的数据类型错误，仅能接受字符串或对象！");
+                                                }
+                                            }
                                         } else if (Object.prototype.toString.call(arguments[InsertNum][attrName]) === '[object String]') {
                                             let begchar = arguments[InsertNum][attrName].charAt(0);
                                             let endchar = arguments[InsertNum][attrName].charAt(arguments[InsertNum][attrName].length - 1);
@@ -213,44 +226,43 @@ class analyze {
                         let encss = arguments[InsertNum].indexOf(':');//冒号间隔符
                         if (begchar === '{' && endchar === '}' && encss > 1) {
                             let tmpExtOne;
-
-                            if(InsertNum===1){
-                                if(encis>4){
-                                    finalAnalyzeValueObj.insert=[];
-                                    tmpExtOne=arguments[InsertNum].split(',');
-                                    for(let gItem=0;gItem<tmpExtOne.length;gItem++){
-                                        let cuts=tmpExtOne[gItem].substr(1,tmpExtOne[gItem].length-2);
-                                        cuts=cuts.split(':');
-                                        let tmpObj={};
-                                        tmpObj[cuts[0]]=cuts[1];
-                                        finalAnalyzeValueObj.insert[gItem]=tmpObj;
+                            if (InsertNum === 1) {
+                                if (encis > 4) {
+                                    finalAnalyzeValueObj.insert = [];
+                                    tmpExtOne = arguments[InsertNum].split(',');
+                                    for (let gItem = 0; gItem < tmpExtOne.length; gItem++) {
+                                        let cuts = tmpExtOne[gItem].substr(1, tmpExtOne[gItem].length - 2);
+                                        cuts = cuts.split(':');
+                                        let tmpObj = {};
+                                        tmpObj[cuts[0]] = cuts[1];
+                                        finalAnalyzeValueObj.insert[gItem] = tmpObj;
                                     }
-                                }else{
-                                    tmpExtOne=arguments[InsertNum];
-                                    let sings=tmpExtOne.substr(1,tmpExtOne.length-2);
-                                    sings=sings.split(':');
-                                    finalAnalyzeValueObj.insert={};
-                                    finalAnalyzeValueObj.insert[sings[0]]=sings[1];
+                                } else {
+                                    tmpExtOne = arguments[InsertNum];
+                                    let sings = tmpExtOne.substr(1, tmpExtOne.length - 2);
+                                    sings = sings.split(':');
+                                    finalAnalyzeValueObj.insert = {};
+                                    finalAnalyzeValueObj.insert[sings[0]] = sings[1];
                                 }
-                            }else if(InsertNum===0){
+                            } else if (InsertNum === 0) {
                                 tmpExtOne = arguments[InsertNum].substr(1, arguments[InsertNum].length - 2);
                                 tmpExtOne = tmpExtOne.split(':');
-                                finalAnalyzeValueObj[tmpExtOne[0]]=tmpExtOne[1];
-                            }else{
+                                finalAnalyzeValueObj[tmpExtOne[0]] = tmpExtOne[1];
+                            } else {
                                 throw new Error("传递的形参过多！");
                             }
                         } else {
                             throw new Error("字符串内容格式错误！");
                         }
                     } else if (Object.prototype.toString.call(arguments[InsertNum]) === '[object Array]') {
-                        finalAnalyzeValueObj.insert =[];
-                        let finArr=0;
+                        finalAnalyzeValueObj.insert = [];
+                        let finArr = 0;
                         for (let arrcout = 0; arrcout < arguments[InsertNum].length; arrcout++) {
-                            if(arguments[InsertNum][arrcout]!==undefined){
-                                finalAnalyzeValueObj.insert[finArr]='';
+                            if (arguments[InsertNum][arrcout] !== undefined) {
+                                finalAnalyzeValueObj.insert[finArr] = '';
                             }
                             if (Object.prototype.toString.call(arguments[InsertNum][arrcout]) === '[object Object]') {
-
+                                finalAnalyzeValueObj.insert[finArr] = arguments[InsertNum][arrcout];
                             } else if (Object.prototype.toString.call(arguments[InsertNum][arrcout]) === '[object String]') {
                                 let begchar = arguments[InsertNum][arrcout].charAt(0);
                                 let endchar = arguments[InsertNum][arrcout].charAt(arguments[InsertNum][arrcout].length - 1);
@@ -291,6 +303,141 @@ class analyze {
             MessageProcess("请传递两个形参，第一个是数据集合名，第二个是要插入数据表集合的数据！");
         }
     }
+    static updateStatementAnalyze = function () {
+        finalAnalyzeValueObj = null;
+        finalAnalyzeValueObj = {};
+        try {
+            for (let usnum = 0; usnum < arguments.length; usnum++) {
+                switch (Object.prototype.toString.call(arguments[usnum])) {
+                    case "[object Object]":
+                        for (let attrName in arguments[usnum]) {
+                            switch (attrName) {
+                                case "collname":
+                                    finalAnalyzeValueObj.collname = arguments[usnum][attrName];
+                                    break;
+                                case "update":
+                                    switch (Object.prototype.toString.call(arguments[usnum][attrName])) {
+                                        case "[object Array]":
+                                            finalAnalyzeValueObj.update = [];
+                                            for (let xxa = 0; xxa < arguments[usnum][attrName].length; xxa++) {
+                                                finalAnalyzeValueObj.update[xxa] = {};
+                                                switch (Object.prototype.toString.call(arguments[usnum][attrName][xxa])) {
+                                                    case "[object String]":
+                                                        let detbegchar = arguments[usnum][attrName][xxa].charAt(0);
+                                                        let detendchar = arguments[usnum][attrName][xxa].charAt(arguments[usnum][attrName][xxa].length - 1);
+                                                        break;
+                                                    case "[object Object]":
+                                                        for (let aName in arguments[usnum][attrName][xxa]) {
+                                                            switch (aName) {
+                                                                case "where":
+                                                                    finalAnalyzeValueObj.update[xxa].where = {};
+                                                                    switch (Object.prototype.toString.call(arguments[usnum][attrName][xxa][aName])) {
+                                                                        case "[object Object]":
+                                                                            finalAnalyzeValueObj.update[xxa].where = arguments[usnum][attrName][xxa][aName];
+                                                                            break;
+                                                                        case "[object String]":
+                                                                            let ctxx = arguments[usnum][attrName][xxa][aName].substr(1, arguments[usnum][attrName][xxa][aName].length - 2);
+                                                                            ctxx = ctxx.split(':');
+                                                                            finalAnalyzeValueObj.update[xxa].where[ctxx[0]] = ctxx[1];
+                                                                            break;
+                                                                        default:
+                                                                            finalAnalyzeValueObj = null;
+                                                                            throw new Error(aName + "属性中包含未知的数据类型，无法分析！");
+                                                                    }
+                                                                    break;
+                                                                case "updatestring":
+                                                                    finalAnalyzeValueObj.update[xxa].updatestring = {};
+                                                                    switch (Object.prototype.toString.call(arguments[usnum][attrName][xxa][aName])) {
+                                                                        case "[object Object]":
+                                                                            finalAnalyzeValueObj.update[xxa].updatestring = arguments[usnum][attrName][xxa][aName]
+                                                                            break;
+                                                                        case "[object String]":
+                                                                            let cvxx = arguments[usnum][attrName][xxa][aName].substr(1, arguments[usnum][attrName][xxa][aName].length - 2);
+                                                                            cvxx = cvxx.split(':');
+                                                                            finalAnalyzeValueObj.update[xxa].updatestring[cvxx[0]] = cvxx[1];
+                                                                            break;
+                                                                        default:
+                                                                            finalAnalyzeValueObj = null;
+                                                                            throw new Error("发现未知的数据类型，不能继续解析！");
+                                                                    }
+                                                                    break;
+                                                                default:
+                                                                    finalAnalyzeValueObj = null;
+                                                                    throw new Error("update属性数组中的对象存在未识别的属性，分析引擎已停止！");
+                                                            }
+                                                        }
+                                                        break;
+                                                    default:
+                                                        finalAnalyzeValueObj = null;
+                                                        throw new Error("update属性数组中存在未识别或为空数组的数据类型，仅支持字符串、对象！");
+                                                }
+                                            }
+                                            break;
+                                        case "[object Object]":
+                                            finalAnalyzeValueObj.update = {};
+                                            finalAnalyzeValueObj.update = arguments[usnum][attrName];
+                                            break;
+                                        default:
+                                            throw new Error("update属性仅支持传递接收数组或对象的数据类型！");
+                                    }
+                                    break;
+                                case "updateway":
+                                    switch (arguments[usnum][attrName]) {
+                                        case "single":
+                                            finalAnalyzeValueObj.updateway = "single";
+                                            break;
+                                        case "all":
+                                            finalAnalyzeValueObj.update = "all";
+                                            break;
+                                        default:
+                                            finalAnalyzeValueObj = null;
+                                            throw new Error("updateway仅支持single、all这两个属性值！");
+                                    }
+                                    break;
+                                default:
+                                    finalAnalyzeValueObj = null;
+                                    throw new Error("出现未知的属性，无法解析！");
+                            }
+                        }
+                        break;
+                    case "[object String]":
+                        let prvv = arguments[usnum].substr(1, arguments[usnum].length - 2);
+                        let datahead = prvv.substr(0, prvv.indexOf(':'));
+                        let databody = prvv.substr(prvv.indexOf(':') + 1);
+                        let begsdchar = databody.charAt(0);
+                        let endsdchar = databody.charAt(databody.length - 1);
+                        console.log(databody);
+                        switch (datahead) {
+                            case "collname":
+                                if (begsdchar === "\"" && endsdchar === "\"") {
+                                    let exttdata=databody.substr(1,databody.length-1);
+                                    console.log()
+                                } else if (begsdchar === "\'" && endsdchar === "\'") {
+
+                                } else {
+                                    finalAnalyzeValueObj.collname=databody;
+                                }
+                                break;
+                            case "update":
+
+                                break;
+                            default:
+                                throw new Error("存在未知的属性标识！");
+                        }
+                        break;
+                    case "[object Array]":
+                        break;
+                    default:
+                        finalAnalyzeValueObj = null;
+                        throw new Error("请传递对象或字符串数据进行分析！");
+                }
+            }
+        } catch (e) {
+            MessageProcess(e.message);
+        }
+    }
+
+
 }//分析引擎
 
 class ExecuteEngine {
@@ -326,14 +473,91 @@ class ExecuteEngine {
                 });
             } else {
                 MessageProcess("请传递对象或对象数组");
+                dbs.close();
             }
         });
     }
     static updateDataOperate = async function () {
-
+        finalGetQueryValue = "";
+        await mongoObject.connect(getDataLibraryURL(), function (err, dbs) {
+            if (Object.prototype.toString.call(finalAnalyzeValueObj.update) === '[object Object]') {
+                if (finalAnalyzeValueObj.updateWay === "single") {
+                    if (Object.prototype.toString.call(finalAnalyzeValueObj.update.where) === '[object Object]' && Object.prototype.toString.call(finalAnalyzeValueObj.update.updateString) === '[object Object]') {
+                        dbs.db(mongoConnectMsgBody.dataBaseName).collname(finalAnalyzeValueObj.collname).updateOne(finalAnalyzeValueObj.update.where, finalAnalyzeValueObj.update.updateString, (err, res) => {
+                            if (err) {
+                                throw err
+                            } else {
+                                MessageProcess("数据更新成功，更新了" + res.result.nModified + "条数据");
+                            }
+                        });
+                    } else {
+                        MessageProcess("update属性内部的where、updateString两个属性必须为对象！");
+                    }
+                } else if (finalAnalyzeValueObj.updateWay === "all") {
+                    if (Object.prototype.toString.call(finalAnalyzeValueObj.update.where) === '[object Object]' && Object.prototype.toString.call(finalAnalyzeValueObj.update.updateString) === '[object Object]') {
+                        dbs.db(mongoConnectMsgBody.dataBaseName).collname(finalAnalyzeValueObj.collname).updateMany(finalAnalyzeValueObj.update.where, finalAnalyzeValueObj.update.updateString, (err, res) => {
+                            if (err) {
+                                throw err
+                            } else {
+                                MessageProcess("数据更新成功，更新了" + res.result.nModified + "条数据");
+                            }
+                        });
+                    } else {
+                        MessageProcess("update属性内部的where、updateString两个属性必须为对象！");
+                    }
+                } else {
+                    MessageProcess("更新数据方式是必选的，仅支持single、all两种方式");
+                }
+            } else if (Object.prototype.toString.call(finalAnalyzeValueObj.update) === '[object Array]') {
+                if (finalAnalyzeValueObj.updateWay === "single") {
+                    for (let updateNum = 0; updateNum < finalAnalyzeValueObj.update.length; updateNum++) {
+                        if (Object.prototype.toString.call(finalAnalyzeValueObj.update[updateNum]) === '[object Object]') {
+                            if (Object.prototype.toString.call(finalAnalyzeValueObj.update[updateNum].where) === '[object Object]' && Object.prototype.toString.call(finalAnalyzeValueObj.update[updateNum].updateString) === '[object Object]') {
+                                dbs.db(mongoConnectMsgBody.dataBaseName).collname(finalAnalyzeValueObj.collname).updateOne(finalAnalyzeValueObj.update[updateNum].where, finalAnalyzeValueObj.update[updateNum].updateString, (err, res) => {
+                                    if (err) {
+                                        throw err
+                                    } else {
+                                        MessageProcess("数据更新成功，更新了" + res.result.nModified + "条数据");
+                                    }
+                                });
+                            } else {
+                                MessageProcess("update属性内部的where、updateString两个属性必须为对象！");
+                            }
+                        } else {
+                            continue;
+                        }
+                    }
+                } else if (finalAnalyzeValueObj.updateWay === "all") {
+                    for (let updateNum = 0; updateNum < finalAnalyzeValueObj.update.length; updateNum++) {
+                        if (Object.prototype.toString.call(finalAnalyzeValueObj.update[updateNum]) === '[object Object]') {
+                            if (Object.prototype.toString.call(finalAnalyzeValueObj.update[updateNum].where) === '[object Object]' && Object.prototype.toString.call(finalAnalyzeValueObj.update[updateNum].updateString) === '[object Object]') {
+                                dbs.db(mongoConnectMsgBody.dataBaseName).collname(finalAnalyzeValueObj.collname).updateMany(finalAnalyzeValueObj.update[updateNum].where, finalAnalyzeValueObj.update[updateNum].updateString, (err, res) => {
+                                    if (err) {
+                                        throw err
+                                    } else {
+                                        MessageProcess("数据更新成功，更新了" + res.result.nModified + "条数据");
+                                    }
+                                });
+                            } else {
+                                MessageProcess("update属性内部的where、updateString两个属性必须为对象！");
+                            }
+                        } else {
+                            continue;
+                        }
+                    }
+                } else {
+                    MessageProcess("更新数据方式是必选的，仅支持single、all两种方式");
+                }
+            } else {
+                MessageProcess("请传递数据对象或数据对象数组！");
+            }
+        });
     }
     static removeDataOperate = async function () {
-
+    }
+    static createCollection = async function () {
+    }
+    static deleteCollection = async function () {
     }
 }//执行引擎
 
@@ -518,6 +742,10 @@ class mongoQueryOperateProcess extends ExecuteEngine {
 
 }
 
+function devtest() {
+    analyze.updateStatementAnalyze(arguments[0], arguments[1]);
+}
+
 /**对外公开部分函数**/
 
 module.exports = {
@@ -528,5 +756,6 @@ module.exports = {
     singleInsert,
     getFinalQueryValue,
     mongoQueryOperateProcess,
-    getMessageDisplayType
+    getMessageDisplayType,
+    devtest
 }
